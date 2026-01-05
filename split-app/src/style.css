@@ -1,0 +1,70 @@
+/* src/style.css */
+/* 1. 引入 Tailwind v4 核心 */
+@import "tailwindcss";
+
+/* 2. 設定主題變數 (原本在 tailwind.config.js 的內容移到這裡) */
+@theme {
+  /* 自定義字體 */
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* 金色系 (Gold) */
+  --color-gold-50: #FBF8EB;
+  --color-gold-100: #F5F0D6;
+  --color-gold-200: #E6C968;
+  --color-gold-300: #E0C055;
+  --color-gold-400: #DABC42;
+  --color-gold-500: #D4AF37; /* 經典金 */
+  --color-gold-600: #B59024;
+  --color-gold-700: #8A6D1B;
+  --color-gold-800: #664D14;
+  --color-gold-900: #42320D;
+
+  /* 深色系 (Dark) */
+  --color-dark-100: #FAFAFA; /* 極致灰白背景 */
+  --color-dark-700: #2A2A2A;
+  --color-dark-800: #1A1A1A; /* 卡片黑 */
+  --color-dark-900: #121212; /* 極黑 */
+}
+
+/* 3. 全域設定 */
+:root {
+  font-family: var(--font-sans);
+  background-color: var(--color-dark-100);
+  color: var(--color-dark-800);
+}
+
+/* 4. Vue Transition 動畫 (保持不變) */
+.page-enter-active, .page-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.page-enter-from { opacity: 0; transform: translateY(10px); }
+.page-leave-to { opacity: 0; transform: translateY(-10px); }
+
+.list-enter-active, .list-leave-active {
+  transition: all 0.4s ease;
+}
+.list-enter-from, .list-leave-to {
+  opacity: 0; transform: translateX(-20px);
+}
+
+.modal-enter-active, .modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+
+.modal-content-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.modal-content-leave-active { transition: all 0.2s ease; }
+.modal-content-enter-from, .modal-content-leave-to {
+  opacity: 0; transform: scale(0.95);
+}
+
+/* 工具類 */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* 5. 新增：計算機按鈕樣式 (移到這裡) */
+.btn-calc {
+  @apply h-14 rounded-xl text-xl font-medium text-dark-800 bg-gray-50 border border-gray-100 
+         hover:bg-gold-50 hover:border-gold-200 active:scale-95 active:bg-gold-100 transition-all duration-100 cursor-pointer;
+}
