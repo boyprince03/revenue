@@ -1,31 +1,98 @@
 <template>
-  <div class="min-h-screen p-6 bg-gray-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded shadow w-full max-w-md">
-      <h2 class="text-xl font-bold mb-4">Welcome! Set up your profile</h2>
+  <div class="min-h-screen flex items-center justify-center bg-dark-100 p-6 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gold-500 rounded-full blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute bottom-0 left-0 w-80 h-80 bg-gold-400 rounded-full blur-3xl opacity-10 -translate-x-1/3 translate-y-1/3"></div>
+
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 relative z-10 border border-gray-50">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-light text-dark-900 tracking-wide">Setup Profile</h2>
+        <p class="text-gray-400 text-xs mt-2 uppercase tracking-widest">Let's get you started</p>
+      </div>
       
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium">Nickname</label>
-          <input v-model="form.nickname" class="w-full border p-2 rounded" />
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium">Nationality (Auto-detected)</label>
-          <input v-model="form.nationality" class="w-full border p-2 rounded" placeholder="e.g. TW" />
+      <div class="space-y-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Nickname</label>
+            <input 
+              v-model="form.nickname" 
+              class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-dark-800 placeholder-gray-300 focus:outline-none focus:border-gold-500 focus:bg-white transition-all"
+              placeholder="How should we call you?"
+            />
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Nationality</label>
+              <div class="relative">
+                <input 
+                  v-model="form.nationality" 
+                  class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-dark-800 placeholder-gray-300 focus:outline-none focus:border-gold-500 focus:bg-white transition-all"
+                  placeholder="e.g. TW" 
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gold-500 font-bold opacity-50">AUTO</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Currency</label>
+              <div class="relative">
+                <select 
+                  v-model="form.currency" 
+                  class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-dark-800 appearance-none focus:outline-none focus:border-gold-500 focus:bg-white transition-all cursor-pointer"
+                >
+                  <option value="TWD">TWD</option>
+                  <option value="USD">USD</option>
+                  <option value="JPY">JPY</option>
+                  <option value="EUR">EUR</option>
+                </select>
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium">Preferred Currency</label>
-          <select v-model="form.currency" class="w-full border p-2 rounded">
-            <option value="TWD">TWD (Taiwan Dollar)</option>
-            <option value="USD">USD (US Dollar)</option>
-            <option value="JPY">JPY (Japanese Yen)</option>
-            <option value="EUR">EUR (Euro)</option>
-          </select>
+        <div class="relative py-2">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-100"></div>
+          </div>
+          <div class="relative flex justify-center">
+            <span class="bg-white px-4 text-xs text-gray-300 uppercase tracking-widest">Optional</span>
+          </div>
         </div>
 
-        <button @click="saveProfile" class="w-full bg-green-600 text-white p-3 rounded mt-4">
-          Start Using
+        <div class="bg-gold-50/50 p-5 rounded-2xl border border-gold-100/50">
+           <div class="flex items-center gap-2 mb-4">
+             <span class="w-6 h-6 rounded-full bg-gold-100 text-gold-600 flex items-center justify-center text-xs">💳</span>
+             <div>
+               <h3 class="text-sm font-bold text-dark-800">Payment Info</h3>
+               <p class="text-[10px] text-gold-600/70">For receiving money from others</p>
+             </div>
+           </div>
+           
+           <div class="space-y-3">
+             <div>
+               <input 
+                 v-model="form.bankName" 
+                 class="w-full bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm text-dark-800 placeholder-gray-300 focus:outline-none focus:border-gold-500 transition-all"
+                 placeholder="Bank Name / Code (e.g. CTBC 822)" 
+               />
+             </div>
+             <div>
+               <input 
+                 v-model="form.bankAccount" 
+                 class="w-full bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm text-dark-800 placeholder-gray-300 font-mono focus:outline-none focus:border-gold-500 transition-all"
+                 placeholder="Account Number" 
+               />
+             </div>
+           </div>
+        </div>
+
+        <button 
+          @click="saveProfile" 
+          class="w-full bg-dark-800 text-white py-4 rounded-xl shadow-lg hover:bg-black hover:scale-[1.02] active:scale-95 transition-all duration-300 font-medium tracking-wide flex items-center justify-center gap-2 group"
+        >
+          <span>Save Profile</span>
+          <span class="text-gold-500 group-hover:translate-x-1 transition-transform">➔</span>
         </button>
       </div>
     </div>
@@ -40,27 +107,55 @@ import { useRouter } from 'vue-router';
 
 const store = useMainStore();
 const router = useRouter();
-const form = ref({ nickname: '', nationality: '', currency: 'USD' });
+const form = ref({ 
+  nickname: '', 
+  nationality: '', 
+  currency: 'USD',
+  bankName: '',
+  bankAccount: ''
+});
 
 const countryToCurrency = { 'TW': 'TWD', 'US': 'USD', 'JP': 'JPY', 'KR': 'KRW' };
 
-onMounted(() => {
+// 修改開頭: 完整資料初始化邏輯
+onMounted(async () => {
   if (auth.currentUser) {
-    form.value.nickname = auth.currentUser.displayName;
+    const uid = auth.currentUser.uid;
     
-    if ("geolocation" in navigator) {
+    // 1. 確保 Store 有最新資料
+    if (!store.userProfile) {
+      await store.fetchUserProfile(uid);
+    }
+    
+    // 2. 如果已存在 Profile 資料，回填到表單
+    if (store.userProfile) {
+      const p = store.userProfile;
+      form.value.nickname = p.nickname || auth.currentUser.displayName || '';
+      form.value.nationality = p.nationality || '';
+      form.value.currency = p.currency || 'USD';
+      // 這裡就是您之前遺漏的部分：自動帶入銀行資訊
+      form.value.bankName = p.bankName || '';
+      form.value.bankAccount = p.bankAccount || '';
+    } else {
+      // 若完全無資料，才使用預設值
+      form.value.nickname = auth.currentUser.displayName || '';
+    }
+    
+    // 3. 只有當國籍未設定時，才嘗試自動偵測，避免覆蓋使用者已存資料
+    if (!form.value.nationality && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
-        const detectedCountryCode = 'TW'; 
+        const detectedCountryCode = 'TW'; // 模擬偵測
         form.value.nationality = detectedCountryCode;
-        if(countryToCurrency[detectedCountryCode]) {
+        // 如果幣別也還沒設，順便帶入
+        if(form.value.currency === 'USD' && countryToCurrency[detectedCountryCode]) {
           form.value.currency = countryToCurrency[detectedCountryCode];
         }
       });
     }
   }
 });
+// 修改結尾
 
-// 修改開頭: 儲存 Profile 後檢查 Invite
 const saveProfile = async () => {
   if (!auth.currentUser) return;
   await store.updateUserProfile(auth.currentUser.uid, form.value);
@@ -72,5 +167,4 @@ const saveProfile = async () => {
     router.push('/dashboard');
   }
 };
-// 修改結尾
 </script>
