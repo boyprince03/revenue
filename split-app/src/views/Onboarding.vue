@@ -5,24 +5,24 @@
 
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 relative z-10 border border-gray-50">
       <div class="text-center mb-8">
-        <h2 class="text-2xl font-light text-dark-900 tracking-wide">Setup Profile</h2>
-        <p class="text-gray-400 text-xs mt-2 uppercase tracking-widest">Let's get you started</p>
+        <h2 class="text-2xl font-light text-dark-900 tracking-wide">{{ t('onboarding.setup_profile') }}</h2>
+        <p class="text-gray-400 text-xs mt-2 uppercase tracking-widest">{{ t('onboarding.subtitle') }}</p>
       </div>
       
       <div class="space-y-6">
         <div class="space-y-4">
           <div>
-            <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Nickname</label>
+            <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">{{ t('onboarding.nickname') }}</label>
             <input 
               v-model="form.nickname" 
               class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-dark-800 placeholder-gray-300 focus:outline-none focus:border-gold-500 focus:bg-white transition-all"
-              placeholder="How should we call you?"
+              :placeholder="t('onboarding.nickname_placeholder')"
             />
           </div>
           
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Nationality</label>
+              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">{{ t('onboarding.nationality') }}</label>
               <div class="relative">
                 <input 
                   v-model="form.nationality" 
@@ -34,7 +34,7 @@
             </div>
 
             <div>
-              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">Currency</label>
+              <label class="block text-xs uppercase tracking-widest text-gray-400 mb-2 ml-1">{{ t('onboarding.currency') }}</label>
               <div class="relative">
                 <select 
                   v-model="form.currency" 
@@ -56,7 +56,7 @@
             <div class="w-full border-t border-gray-100"></div>
           </div>
           <div class="relative flex justify-center">
-            <span class="bg-white px-4 text-xs text-gray-300 uppercase tracking-widest">Optional</span>
+            <span class="bg-white px-4 text-xs text-gray-300 uppercase tracking-widest">{{ t('onboarding.optional') }}</span>
           </div>
         </div>
 
@@ -64,8 +64,8 @@
            <div class="flex items-center gap-2 mb-4">
              <span class="w-6 h-6 rounded-full bg-gold-100 text-gold-600 flex items-center justify-center text-xs">💳</span>
              <div>
-               <h3 class="text-sm font-bold text-dark-800">Payment Info</h3>
-               <p class="text-[10px] text-gold-600/70">For receiving money from others</p>
+               <h3 class="text-sm font-bold text-dark-800">{{ t('onboarding.payment_info') }}</h3>
+               <p class="text-[10px] text-gold-600/70">{{ t('onboarding.payment_desc') }}</p>
              </div>
            </div>
            
@@ -74,14 +74,14 @@
                <input 
                  v-model="form.bankName" 
                  class="w-full bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm text-dark-800 placeholder-gray-300 focus:outline-none focus:border-gold-500 transition-all"
-                 placeholder="Bank Name / Code (e.g. CTBC 822)" 
+                 :placeholder="t('group.bank_name_code')" 
                />
              </div>
              <div>
                <input 
                  v-model="form.bankAccount" 
                  class="w-full bg-white border border-gray-100 rounded-xl px-4 py-2 text-sm text-dark-800 placeholder-gray-300 font-mono focus:outline-none focus:border-gold-500 transition-all"
-                 placeholder="Account Number" 
+                 :placeholder="t('group.account_label')" 
                />
              </div>
            </div>
@@ -91,7 +91,7 @@
           @click="saveProfile" 
           class="w-full bg-dark-800 text-white py-4 rounded-xl shadow-lg hover:bg-black hover:scale-[1.02] active:scale-95 transition-all duration-300 font-medium tracking-wide flex items-center justify-center gap-2 group"
         >
-          <span>Save Profile</span>
+          <span>{{ t('onboarding.save_profile') }}</span>
           <span class="text-gold-500 group-hover:translate-x-1 transition-transform">➔</span>
         </button>
       </div>
@@ -104,7 +104,9 @@ import { ref, onMounted } from 'vue';
 import { auth } from '../firebase';
 import { useMainStore } from './main';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n'; // 修改開頭: 新增引入
 
+const { t } = useI18n(); // 啟用翻譯功能
 const store = useMainStore();
 const router = useRouter();
 const form = ref({ 
@@ -117,36 +119,29 @@ const form = ref({
 
 const countryToCurrency = { 'TW': 'TWD', 'US': 'USD', 'JP': 'JPY', 'KR': 'KRW' };
 
-// 修改開頭: 完整資料初始化邏輯
 onMounted(async () => {
   if (auth.currentUser) {
     const uid = auth.currentUser.uid;
     
-    // 1. 確保 Store 有最新資料
     if (!store.userProfile) {
       await store.fetchUserProfile(uid);
     }
     
-    // 2. 如果已存在 Profile 資料，回填到表單
     if (store.userProfile) {
       const p = store.userProfile;
       form.value.nickname = p.nickname || auth.currentUser.displayName || '';
       form.value.nationality = p.nationality || '';
       form.value.currency = p.currency || 'USD';
-      // 這裡就是您之前遺漏的部分：自動帶入銀行資訊
       form.value.bankName = p.bankName || '';
       form.value.bankAccount = p.bankAccount || '';
     } else {
-      // 若完全無資料，才使用預設值
       form.value.nickname = auth.currentUser.displayName || '';
     }
     
-    // 3. 只有當國籍未設定時，才嘗試自動偵測，避免覆蓋使用者已存資料
     if (!form.value.nationality && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (position) => {
-        const detectedCountryCode = 'TW'; // 模擬偵測
+        const detectedCountryCode = 'TW'; 
         form.value.nationality = detectedCountryCode;
-        // 如果幣別也還沒設，順便帶入
         if(form.value.currency === 'USD' && countryToCurrency[detectedCountryCode]) {
           form.value.currency = countryToCurrency[detectedCountryCode];
         }
@@ -154,7 +149,6 @@ onMounted(async () => {
     }
   }
 });
-// 修改結尾
 
 const saveProfile = async () => {
   if (!auth.currentUser) return;
@@ -167,4 +161,5 @@ const saveProfile = async () => {
     router.push('/dashboard');
   }
 };
+// 修改結尾
 </script>

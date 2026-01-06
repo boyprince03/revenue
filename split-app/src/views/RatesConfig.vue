@@ -34,7 +34,8 @@
     </div>
     
     <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth no-scrollbar"
-         :class="{'pb-24': !isKeypadOpen}"> <div v-for="(target, index) in targetCurrencies" :key="target + index" 
+         :class="{'pb-24': !isKeypadOpen}"> 
+       <div v-for="(target, index) in targetCurrencies" :key="target + index" 
            class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform select-none cursor-pointer relative overflow-hidden group"
            @click="handleTargetClick(index)"
            @touchstart="handleTouchStart($event, 'target', index)"
@@ -174,6 +175,7 @@
               <h4 v-if="selectionMode === 'base' && !searchQuery" class="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider sticky top-0 bg-white z-10">All Currencies</h4>
               <div class="grid grid-cols-1 gap-1 pb-10">
                  <div v-for="curr in filteredCurrencies" :key="curr"
+                      v-if="selectionMode === 'base' || curr !== baseCurrency"
                       @click="handleCurrencySelect(curr)"
                       class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 active:bg-gold-50 cursor-pointer">
                     <div class="flex items-center gap-3">
@@ -200,7 +202,7 @@ import { useMainStore } from './main';
 
 const store = useMainStore();
 
-// Data (與之前相同)
+// Data
 const ALL_CURRENCIES = [
   "AED", "AFN", "ALL", "AMD", "ANG", "AOA", "ARS", "AUD", "AWG", "AZN", 
   "BAM", "BBD", "BDT", "BGN", "BHD", "BIF", "BMD", "BND", "BOB", "BRL", 
@@ -237,7 +239,7 @@ const displayValue = ref('');
 const currentExpression = ref('');
 const history = ref([]);
 const showMobileHistory = ref(false);
-const isKeypadOpen = ref(true); // 新增：控制鍵盤是否展開
+const isKeypadOpen = ref(true);
 
 const showCurrencyModal = ref(false);
 const searchQuery = ref('');
@@ -274,9 +276,19 @@ const openCurrencyModal = (mode, index = -1) => {
   showCurrencyModal.value = true;
 };
 
+// 處理目標貨幣的點擊事件 (短按互換，長按編輯)
 const handleTargetClick = (index) => {
-  if (longPressTriggered.value) return;
-  openCurrencyModal('target', index);
+  if (longPressTriggered.value) return; // 如果觸發了長按，則不執行短按邏輯
+  
+  // Swap logic (互換邏輯)
+  const oldBase = baseCurrency.value;
+  const newBase = targetCurrencies.value[index];
+
+  baseCurrency.value = newBase;
+  targetCurrencies.value[index] = oldBase;
+
+  // 觸覺回饋增加互動感
+  if (navigator.vibrate) navigator.vibrate(30);
 };
 
 const handleCurrencySelect = (curr) => {
@@ -309,6 +321,7 @@ const startLongPress = (type, id) => {
     if (type === 'pin') {
       if (selectionMode.value === 'base') togglePin(id);
     } else if (type === 'target') {
+      // 長按：開啟編輯選單
       openCurrencyModal('target', id);
     }
     activeLongPressId.value = null;
