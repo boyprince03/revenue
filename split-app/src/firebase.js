@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 // import { getAnalytics } from "firebase/analytics"; 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAyxbZQWGHISHK-gumMQuHnzhOTQoS5hgA",
-  authDomain: "device-streaming-e921c475.firebaseapp.com",
-  projectId: "device-streaming-e921c475",
-  storageBucket: "device-streaming-e921c475.firebasestorage.app",
-  messagingSenderId: "303515436841",
-  appId: "1:303515436841:web:01c9b39cd66b14dea5d938",
-  measurementId: "G-ECLQ35FTRB"
+  apiKey: "AIzaSyCIcAZiHaF11h6HxSxYbPaG8CafX7xSVig",
+  authDomain: "divvy-app-e4565.firebaseapp.com",
+  projectId: "divvy-app-e4565",
+  storageBucket: "divvy-app-e4565.firebasestorage.app",
+  messagingSenderId: "1098437381330",
+  appId: "1:1098437381330:web:7811b086b7bbc37ce8710b",
+  measurementId: "G-Z8KCWD3P9M"
 };
 
 const app = initializeApp(firebaseConfig);

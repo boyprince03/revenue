@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "device-streaming-e921c475"
-  }
+    "default": "device-streaming-e921c475",
+    "new": "divvy-app-e4565"
+  },
+  "targets": {},
+  "etags": {}
 }

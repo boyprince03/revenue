@@ -300,12 +300,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+// 修改開頭: 引入 watch 和 useRoute 以監聽路由變化
+import { ref, onMounted, computed, watch } from 'vue';
 import { auth, db } from '../firebase';
 import { signOut } from "firebase/auth";
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { useMainStore } from './main';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
 
 const ALL_CURRENCIES = [
@@ -329,6 +330,7 @@ const ALL_CURRENCIES = [
 
 const store = useMainStore();
 const router = useRouter();
+const route = useRoute();
 const user = auth.currentUser;
 const profile = computed(() => store.userProfile);
 const groups = ref([]);
@@ -449,37 +451,65 @@ const handleLogout = async () => {
   }
 };
 
-onMounted(async () => {
-  if (user) {
-    // 修改開頭: 新增檢查待處理的邀請 (針對已登入使用者)
-    const pendingGroupId = await store.handlePendingInvite();
-    if (pendingGroupId) {
-       // 如果有成功加入群組，直接導向該群組，不繼續載入 Dashboard 內容
-       router.push(`/group/${pendingGroupId}`);
-       return;
-    }
-    // 修改結尾
-
-    if(!store.userProfile) await store.fetchUserProfile(user.uid);
-    await store.fetchRates();
-    
-    const savedTargets = localStorage.getItem('calc_targets');
-    if (savedTargets) {
-      const parsed = JSON.parse(savedTargets);
-      if (parsed && parsed.length > 0) previewTargets.value = parsed.slice(0, 4);
-    }
-
-    await fetchGroups();
+// 獨立出來的檢查邀請函式，確保隨時可呼叫
+const checkPendingInvite = async () => {
+  // 使用當下最新的 auth.currentUser，避免 const user 參照過時
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+     const pendingGroupId = await store.handlePendingInvite();
+     if (pendingGroupId) {
+        // 如果有成功加入群組，直接導向該群組
+        router.push(`/group/${pendingGroupId}`);
+        return true;
+     }
   }
+  return false;
+};
+
+onMounted(async () => {
+    // 1. 先執行一次檢查 (Cold Load)
+    if (await checkPendingInvite()) return;
+
+    // 2. 獲取資料
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        if(!store.userProfile) await store.fetchUserProfile(currentUser.uid);
+        await store.fetchRates();
+        
+        const savedTargets = localStorage.getItem('calc_targets');
+        if (savedTargets) {
+          const parsed = JSON.parse(savedTargets);
+          if (parsed && parsed.length > 0) previewTargets.value = parsed.slice(0, 4);
+        }
+
+        await fetchGroups();
+    }
+});
+
+// 3. 監聽路由變化，解決 "APP 已開啟時點擊連結無反應" 的問題
+watch(() => route.query, async () => {
+   // 當 Router Guard 處理完 invite 並導向回來時，這裡不一定會觸發，
+   // 但如果是透過連結重新激活組件，這層防護是必要的。
+   // 更重要的是監聽 path 的變更(從 / 到 /dashboard)
+   await checkPendingInvite();
+}, { deep: true });
+
+// 監聽完整路徑，確保從 "/" 轉址回 "/dashboard" 時也能觸發
+watch(() => route.path, async () => {
+   await checkPendingInvite();
 });
 
 const fetchGroups = async () => {
-    const q = query(collection(db, "groups"), where("members", "array-contains", user.uid));
+    // 確保使用最新的 user id
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    
+    const q = query(collection(db, "groups"), where("members", "array-contains", currentUser.uid));
     const querySnapshot = await getDocs(q);
     groups.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
+// 修改結尾
 
-// --- Invite Logic ---
 const handleInviteClick = () => {
   if (groups.value.length === 0) {
      const url = window.location.origin;

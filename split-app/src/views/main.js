@@ -1,9 +1,7 @@
 // src/stores/main.js
 import { defineStore } from 'pinia'
 import { auth, db } from '../firebase'
-// 修改開頭: 引入 arrayUnion 用於添加成員
 import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore'
-// 修改結尾
 
 export const useMainStore = defineStore('main', {
   state: () => ({
@@ -49,13 +47,14 @@ export const useMainStore = defineStore('main', {
       return this.rates[target] / this.rates[base];
     },
 
-    // 修改開頭: 新增處理邀請的 Action
+    // 修改開頭: 增強版處理邀請，增加錯誤提示
     /**
      * 檢查是否有待處理的邀請，若有則將當前使用者加入群組
      * @returns {Promise<string|null>} 回傳 groupId 若成功加入，否則回傳 null
      */
     async handlePendingInvite() {
       const inviteGroupId = localStorage.getItem('pending_invite');
+      // 確保取得最新的 auth 狀態
       const user = auth.currentUser;
       
       if (inviteGroupId && user) {
@@ -66,12 +65,19 @@ export const useMainStore = defineStore('main', {
             members: arrayUnion(user.uid)
           });
           
-          // 清除 pending 狀態
+          console.log(`Successfully joined group: ${inviteGroupId}`);
+          // 成功後清除 pending 狀態
           localStorage.removeItem('pending_invite');
           return inviteGroupId;
         } catch (error) {
           console.error("Failed to join group:", error);
-          // 若加入失敗（例如權限問題），也可選擇清除或保留
+          if (error.code === 'permission-denied') {
+             alert("無法加入群組：權限不足。可能是群組連結已失效或被刪除。");
+          } else {
+             alert("加入群組失敗，請稍後再試。");
+          }
+          // 即便失敗（例如權限不足），也移除 invite 以免卡在無限迴圈，除非您希望重試
+          localStorage.removeItem('pending_invite');
           return null;
         }
       }

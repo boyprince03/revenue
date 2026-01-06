@@ -3,11 +3,11 @@
     
     <div class="flex-none bg-dark-100 z-30 shadow-md rounded-b-3xl">
       <div class="flex items-center justify-between p-4 pb-2">
-        <button @click="$router.back()" class="text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+        <button @click="$router.back()" class="text-gray-400 hover:text-dark-800 transition-colors flex items-center gap-1">
           <span class="text-lg">←</span> <span class="text-sm">Back</span>
         </button>
-        <h1 class="text-lg font-medium text-gray-200">Currency Calc</h1>
-        <button @click="showMobileHistory = true" class="text-gold-500 p-2 hover:bg-white/5 rounded-full transition-colors">
+        <h1 class="text-lg font-medium text-dark-800">Currency Calc</h1>
+        <button @click="showMobileHistory = true" class="text-gold-500 p-2 hover:bg-gray-100 rounded-full transition-colors">
           <span class="text-xl">🕒</span>
         </button>
       </div>
@@ -20,19 +20,19 @@
            </button>
            <div class="text-xs text-gray-400 font-mono h-4">{{ currentExpression }}</div>
         </div>
-        <div class="relative border-b border-gray-700 pb-1">
+        <div class="relative border-b border-gray-200 pb-1">
            <input 
              v-model="displayValue" 
              type="text" 
              inputmode="none" 
              readonly
-             class="w-full text-5xl font-light text-white bg-transparent focus:outline-none text-right placeholder-gray-700"
+             class="w-full text-5xl font-light text-dark-800 bg-transparent focus:outline-none text-right placeholder-gray-300"
              placeholder="0"
            >
         </div>
       </div>
     </div>
-
+    
     <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth no-scrollbar"
          :class="{'pb-24': !isKeypadOpen}"> <div v-for="(target, index) in targetCurrencies" :key="target + index" 
            class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform select-none cursor-pointer relative overflow-hidden group"

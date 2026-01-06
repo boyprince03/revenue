@@ -8,7 +8,7 @@
         <span class="text-4xl">💸</span>
       </div>
 
-      <h1 class="text-3xl font-light text-dark-900 mb-2 tracking-wide">Split Bill</h1>
+      <h1 class="text-4xl font-bold text-dark-900 mb-2 tracking-widest font-sans uppercase">DIVVY</h1>
       <p class="text-gray-400 text-sm mb-10 font-light">Simplify your group expenses</p>
       
       <button 
@@ -41,7 +41,6 @@
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 import { useRouter } from "vue-router";
-// 修改開頭: 引入 Store
 import { useMainStore } from "./main";
 
 const router = useRouter();
@@ -62,5 +61,4 @@ const signInWithGoogle = async () => {
     console.error(error);
   }
 };
-// 修改結尾
 </script>
