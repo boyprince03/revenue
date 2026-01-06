@@ -102,11 +102,11 @@
              <span class="text-[10px] text-gray-400 font-mono">Original: {{ exp.currency }} {{ exp.amount }}</span>
           </div>
 
-          <div v-if="exp.payerId === currentUser.uid" class="absolute right-2 -top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div v-if="exp.payerId === currentUser.uid" class="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
              <button @click.stop="deleteExpense(exp.id)" class="bg-red-50 text-red-500 p-1.5 rounded-full shadow-sm text-xs">✕</button>
              <button @click.stop="editExpense(exp)" class="bg-blue-50 text-blue-500 p-1.5 rounded-full shadow-sm text-xs">✎</button>
           </div>
-        </div>
+          </div>
       </transition-group>
       
       <div v-if="filteredExpenses.length === 0" class="text-center py-10 text-gray-400 text-sm">
@@ -467,19 +467,16 @@ onMounted(async () => {
   });
 
   const q = query(collection(db, "expenses"), where("groupId", "==", groupId));
-  // 修改開頭: 優化即時排序邏輯，處理本地 Latency Compensation 的 null Timestamp
   onSnapshot(q, (snapshot) => {
     expenses.value = snapshot.docs.map(d => {
         const data = d.data();
         return { id: d.id, ...data };
     }).sort((a, b) => {
-        // 若 createdAt 為 null (本地寫入尚未同步)，視為現在時間 (Date.now())，確保它排在最上面
         const timeA = a.createdAt ? a.createdAt.toMillis() : Date.now();
         const timeB = b.createdAt ? b.createdAt.toMillis() : Date.now();
         return timeB - timeA;
     });
   });
-  // 修改結尾
 });
 
 const updateMembersList = async (memberIds) => {
@@ -552,14 +549,10 @@ const memberBalances = computed(() => {
     } else {
        if (bal[payer] !== undefined) bal[payer] += amt;
        
-       // 修改重點：這裡的邏輯變簡單了，因為我們現在保證 splitWith 裡面一定有 ID
-       // 但為了相容舊資料（如果有），還是保留後備邏輯，
-       // 不過建議之後所有資料都以「明確名單」為主。
        const splitUsers = (exp.splitWith && exp.splitWith.length > 0) 
           ? exp.splitWith 
-          : members.value.map(m => m.uid); // 相容舊資料(全選=空陣列)的情況
+          : members.value.map(m => m.uid);
        
-       // 過濾掉已經不在群組裡的幽靈人口 (防呆)
        const validSplitUsers = splitUsers.filter(uid => bal[uid] !== undefined);
        
        if (validSplitUsers.length > 0) {
@@ -600,17 +593,14 @@ const suggestedSettlements = computed(() => {
   return plans;
 });
 
-// Modified: Handle Plan Click
 const handlePlanClick = (plan) => {
-  // If user is involved in the plan (Payer or Receiver)
   if (plan.from === currentUser.uid || plan.to === currentUser.uid) {
      selectedPlan.value = plan;
-     showSettlementInfoModal.value = true; // Open intermediate modal
-     showSettlementPlan.value = false;     // Close plan list
+     showSettlementInfoModal.value = true;
+     showSettlementPlan.value = false;
   }
 };
 
-// New: Proceed from Info Modal to Record Form
 const proceedToRecord = () => {
     isEditing.value = false;
     activeTab.value = 'settlement';
@@ -626,7 +616,6 @@ const proceedToRecord = () => {
     showModal.value = true;
 };
 
-// ... Rest of Logic ...
 const filteredExpenses = computed(() => {
   if (selectedMember.value === 'all') return expenses.value;
   return expenses.value.filter(e => e.payerId === selectedMember.value);
@@ -691,17 +680,11 @@ const saveExpense = async () => {
   const settlementAmt = parseFloat(convertedAmount.value);
   const isSettlement = activeTab.value === 'settlement';
 
-  // 修改重點開始：確定義務人名單 (Snapshot)
   let finalSplitWith = [];
   
   if (isSettlement) {
-    // 結帳模式：只有一個對象
     finalSplitWith = [transferTarget.value];
   } else {
-    // 消費模式：
-    // 如果 form.value.splitWith 是空的，代表使用者選了「All (全選)」
-    // 這時我們要明確把「當下所有成員 ID」存進去，而不是存空陣列
-    // 這樣未來新成員加入時，才不會被回溯算到這筆舊帳
     if (form.value.splitWith.length === 0) {
       finalSplitWith = members.value.map(m => m.uid);
     } else {
@@ -715,7 +698,7 @@ const saveExpense = async () => {
     amount: form.value.amount, 
     currency: form.value.currency, 
     settlementAmount: settlementAmt,
-    splitWith: finalSplitWith, // 使用處理過的完整名單
+    splitWith: finalSplitWith,
     type: isSettlement ? 'settlement' : 'expense', 
     createdAt: serverTimestamp()
   };
