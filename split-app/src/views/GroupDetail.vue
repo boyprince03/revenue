@@ -544,15 +544,30 @@ const memberBalances = computed(() => {
   expenses.value.forEach(exp => {
     const amt = exp.settlementAmount || 0;
     const payer = exp.payerId;
+    
     if (exp.type === 'settlement') {
        if (bal[payer] !== undefined) bal[payer] += amt;
        const target = exp.splitWith?.[0];
        if (target && bal[target] !== undefined) bal[target] -= amt;
     } else {
        if (bal[payer] !== undefined) bal[payer] += amt;
-       const splitUsers = (exp.splitWith && exp.splitWith.length > 0) ? exp.splitWith : members.value.map(m => m.uid);
-       const share = amt / splitUsers.length;
-       splitUsers.forEach(uid => { if (bal[uid] !== undefined) bal[uid] -= share; });
+       
+       // 修改重點：這裡的邏輯變簡單了，因為我們現在保證 splitWith 裡面一定有 ID
+       // 但為了相容舊資料（如果有），還是保留後備邏輯，
+       // 不過建議之後所有資料都以「明確名單」為主。
+       const splitUsers = (exp.splitWith && exp.splitWith.length > 0) 
+          ? exp.splitWith 
+          : members.value.map(m => m.uid); // 相容舊資料(全選=空陣列)的情況
+       
+       // 過濾掉已經不在群組裡的幽靈人口 (防呆)
+       const validSplitUsers = splitUsers.filter(uid => bal[uid] !== undefined);
+       
+       if (validSplitUsers.length > 0) {
+         const share = amt / validSplitUsers.length;
+         validSplitUsers.forEach(uid => { 
+           if (bal[uid] !== undefined) bal[uid] -= share; 
+         });
+       }
     }
   });
   return bal;
@@ -672,16 +687,42 @@ const editExpense = (exp) => {
 const saveExpense = async () => {
   if (!form.value.amount) return;
   if (activeTab.value === 'settlement' && !transferTarget.value) { alert("Please select who you are paying."); return; }
+  
   const settlementAmt = parseFloat(convertedAmount.value);
   const isSettlement = activeTab.value === 'settlement';
+
+  // 修改重點開始：確定義務人名單 (Snapshot)
+  let finalSplitWith = [];
+  
+  if (isSettlement) {
+    // 結帳模式：只有一個對象
+    finalSplitWith = [transferTarget.value];
+  } else {
+    // 消費模式：
+    // 如果 form.value.splitWith 是空的，代表使用者選了「All (全選)」
+    // 這時我們要明確把「當下所有成員 ID」存進去，而不是存空陣列
+    // 這樣未來新成員加入時，才不會被回溯算到這筆舊帳
+    if (form.value.splitWith.length === 0) {
+      finalSplitWith = members.value.map(m => m.uid);
+    } else {
+      finalSplitWith = form.value.splitWith;
+    }
+  }
   const payload = {
-    groupId, payerId: currentUser.uid, name: isSettlement ? 'Settlement' : (form.value.name || 'Expense'),
-    amount: form.value.amount, currency: form.value.currency, settlementAmount: settlementAmt,
-    splitWith: isSettlement ? [transferTarget.value] : form.value.splitWith,
-    type: isSettlement ? 'settlement' : 'expense', createdAt: serverTimestamp()
+    groupId, 
+    payerId: currentUser.uid, 
+    name: isSettlement ? 'Settlement' : (form.value.name || 'Expense'),
+    amount: form.value.amount, 
+    currency: form.value.currency, 
+    settlementAmount: settlementAmt,
+    splitWith: finalSplitWith, // 使用處理過的完整名單
+    type: isSettlement ? 'settlement' : 'expense', 
+    createdAt: serverTimestamp()
   };
+
   if (isEditing.value) await updateDoc(doc(db, "expenses", editingId.value), payload);
   else await addDoc(collection(db, "expenses"), payload);
+  
   showModal.value = false;
 };
 
