@@ -171,7 +171,7 @@
                <button @click="handleLeaveGroup" class="w-full mt-6 py-3 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-colors font-medium">
                  Leave Group
                </button>
-               </div>
+             </div>
 
              <button @click="showActionModal = false" class="mt-6 text-gray-400 text-sm hover:text-dark-800">Close</button>
           </div>
@@ -303,9 +303,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { auth, db } from '../firebase';
 import { signOut } from "firebase/auth";
-// 修改開頭: 引入 writeBatch 進行批次操作
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
-// 修改結尾
 import { useMainStore } from './main';
 import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
@@ -453,6 +451,15 @@ const handleLogout = async () => {
 
 onMounted(async () => {
   if (user) {
+    // 修改開頭: 新增檢查待處理的邀請 (針對已登入使用者)
+    const pendingGroupId = await store.handlePendingInvite();
+    if (pendingGroupId) {
+       // 如果有成功加入群組，直接導向該群組，不繼續載入 Dashboard 內容
+       router.push(`/group/${pendingGroupId}`);
+       return;
+    }
+    // 修改結尾
+
     if(!store.userProfile) await store.fetchUserProfile(user.uid);
     await store.fetchRates();
     
@@ -610,7 +617,6 @@ const saveGroup = async () => {
   selectedGroup.value = null;
 };
 
-// 修改開頭: 包含刪除與退出群組的完整邏輯
 const handleDeleteGroup = async () => {
   if (!selectedGroup.value) return;
   
@@ -661,7 +667,6 @@ const handleLeaveGroup = async () => {
     }
   }
 };
-// 修改結尾
 
 // --- Rate Long Press Logic ---
 const startRateLongPress = () => {

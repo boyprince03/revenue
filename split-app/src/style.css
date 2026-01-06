@@ -26,12 +26,29 @@
   --color-dark-900: #121212; /* 極黑 */
 }
 
+
 /* 3. 全域設定 */
 :root {
   font-family: var(--font-sans);
   background-color: var(--color-dark-100);
   color: var(--color-dark-800);
 }
+
+/* 修改開頭: 加入 App 專用的樣式優化 */
+body {
+    /* 禁止使用者選取文字 (除了 input) */
+    -webkit-user-select: none;
+    user-select: none;
+    /* 禁止長按連結彈出選單 */
+    -webkit-touch-callout: none;
+}
+
+/* 確保輸入框仍然可以輸入和選取 */
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+/* 修改結尾 */
 
 /* 4. Vue Transition 動畫 (保持不變) */
 .page-enter-active, .page-leave-active {
