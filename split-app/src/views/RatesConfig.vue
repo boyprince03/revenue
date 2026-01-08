@@ -33,38 +33,57 @@
       </div>
     </div>
     
-    <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth no-scrollbar"
-         :class="{'pb-24': !isKeypadOpen}"> 
-       <div v-for="(target, index) in targetCurrencies" :key="target + index" 
-           class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform select-none cursor-pointer relative overflow-hidden group"
-           @click="handleTargetClick(index)"
-           @touchstart="handleTouchStart($event, 'target', index)"
-           @touchmove="cancelLongPress"
-           @touchend="handleTouchEnd"
-           @mousedown="handleMouseDown('target', index)"
-           @mouseup="handleMouseUp"
-           @mouseleave="handleMouseUp"
-      >
-         <div class="flex items-center gap-3 z-10">
-           <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-sm font-bold text-gray-400 group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
-             {{ target }}
-           </div>
-           <div class="flex flex-col">
-             <span class="text-xs text-gray-400 font-medium">{{ getCurrencyName(target) }}</span>
-             <span class="text-xl font-bold text-dark-800 tracking-tight leading-none">
-               {{ formatNumber(calculateRate(target)) }}
-             </span>
-           </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth no-scrollbar transition-all duration-300"
+         :class="isKeypadOpen ? 'pb-[24rem]' : 'pb-24'" 
+         ref="listContainer">
+       
+       <transition-group name="list-complete">
+         <div v-for="(target, index) in targetCurrencies" :key="target" 
+              :data-index="index"
+              class="relative rounded-2xl mb-3 select-none touch-pan-y group"
+         >
+            <div class="absolute inset-0 bg-gold-500 rounded-2xl flex justify-end items-center pr-8 z-0">
+               <span class="text-white font-bold tracking-widest text-sm uppercase">Change</span>
+            </div>
+
+            <div 
+               class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center relative z-10 will-change-transform cursor-grab active:cursor-grabbing"
+               :class="{
+                  'z-20 scale-105 shadow-xl ring-2 ring-gold-400 opacity-90 pointer-events-none': isDragging && dragIndex === index,
+                  'transition-transform duration-200 ease-out': !isDragging && (!isSwiping || swipeIndex !== index)
+               }"
+               :style="getCardStyle(index)"
+               @click="handleCardClick(index)"
+               
+               @touchstart="handleInputStart($event, index, 'touch')"
+               @touchmove="handleInputMove($event, 'touch')"
+               @touchend="handleInputEnd"
+               
+               @mousedown="handleInputStart($event, index, 'mouse')"
+            >
+               <div class="flex items-center gap-3 pointer-events-none">
+                 <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-sm font-bold text-gray-400 group-hover:bg-gold-50 group-hover:text-gold-600 transition-colors">
+                   {{ target }}
+                 </div>
+                 <div class="flex flex-col">
+                   <span class="text-xs text-gray-400 font-medium">{{ getCurrencyName(target) }}</span>
+                   <span class="text-xl font-bold text-dark-800 tracking-tight leading-none">
+                     {{ formatNumber(calculateRate(target)) }}
+                   </span>
+                 </div>
+               </div>
+               
+               <div class="text-gray-200 text-lg opacity-50 pointer-events-none">≡</div>
+            </div>
          </div>
-         <div v-if="activeLongPressId === `target-${index}`" class="absolute inset-0 bg-gold-500/10 animate-pulse pointer-events-none z-0"></div>
-      </div>
+       </transition-group>
 
       <button @click="openCurrencyModal('add_target')" class="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-gold-300 hover:text-gold-600 transition-colors flex items-center justify-center gap-2 font-medium bg-gray-50/50">
         <span class="text-lg">+</span> Add Currency
       </button>
     </div>
 
-    <div class="flex-none bg-white z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.08)] rounded-t-3xl transition-all duration-300 ease-in-out pb-[env(safe-area-inset-bottom)]"
+    <div class="absolute bottom-0 left-0 right-0 bg-white z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.08)] rounded-t-3xl transition-transform duration-300 ease-in-out pb-[env(safe-area-inset-bottom)]"
          :class="isKeypadOpen ? 'translate-y-0' : 'translate-y-[calc(100%-2.5rem)]'">
       
       <div @click="isKeypadOpen = !isKeypadOpen" 
@@ -75,27 +94,27 @@
       <div class="grid grid-cols-4 gap-1 px-2 max-w-md mx-auto pb-4 transition-opacity duration-200"
            :class="isKeypadOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
         
-        <button @click="clear" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-red-400">AC</button>
-        <button @click="deleteLast" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-dark-800">⌫</button>
-        <button @click="appendOperator('/')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-gold-600 bg-gold-50/50">÷</button>
-        <button @click="appendOperator('*')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-gold-600 bg-gold-50/50">×</button>
+        <button @click="clear" :class="[btnBase, 'text-red-400 hover:bg-gray-100']">AC</button>
+        <button @click="deleteLast" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">⌫</button>
+        <button @click="appendOperator('/')" :class="[btnBase, 'text-gold-600 bg-gold-50/50 hover:bg-gold-100']">÷</button>
+        <button @click="appendOperator('*')" :class="[btnBase, 'text-gold-600 bg-gold-50/50 hover:bg-gold-100']">×</button>
 
-        <button @click="appendNumber('7')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">7</button>
-        <button @click="appendNumber('8')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">8</button>
-        <button @click="appendNumber('9')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">9</button>
-        <button @click="appendOperator('-')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-gold-600 bg-gold-50/50">-</button>
+        <button @click="appendNumber('7')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">7</button>
+        <button @click="appendNumber('8')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">8</button>
+        <button @click="appendNumber('9')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">9</button>
+        <button @click="appendOperator('-')" :class="[btnBase, 'text-gold-600 bg-gold-50/50 hover:bg-gold-100']">-</button>
 
-        <button @click="appendNumber('4')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">4</button>
-        <button @click="appendNumber('5')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">5</button>
-        <button @click="appendNumber('6')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">6</button>
-        <button @click="appendOperator('+')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none text-gold-600 bg-gold-50/50">+</button>
+        <button @click="appendNumber('4')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">4</button>
+        <button @click="appendNumber('5')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">5</button>
+        <button @click="appendNumber('6')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">6</button>
+        <button @click="appendOperator('+')" :class="[btnBase, 'text-gold-600 bg-gold-50/50 hover:bg-gold-100']">+</button>
 
         <div class="col-span-3 grid grid-cols-3 gap-1">
-           <button @click="appendNumber('1')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">1</button>
-           <button @click="appendNumber('2')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">2</button>
-           <button @click="appendNumber('3')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">3</button>
-           <button @click="appendNumber('0')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none col-span-2">0</button>
-           <button @click="appendNumber('.')" class="h-14 sm:h-16 w-full rounded-2xl text-xl font-medium text-dark-800 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center select-none">.</button>
+           <button @click="appendNumber('1')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">1</button>
+           <button @click="appendNumber('2')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">2</button>
+           <button @click="appendNumber('3')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">3</button>
+           <button @click="appendNumber('0')" :class="[btnBase, 'col-span-2 text-dark-800 hover:bg-gray-100']">0</button>
+           <button @click="appendNumber('.')" :class="[btnBase, 'text-dark-800 hover:bg-gray-100']">.</button>
         </div>
         
         <button @click="calculate" class="h-full rounded-2xl bg-gold-500 text-white text-2xl shadow-lg shadow-gold-200 active:bg-gold-600 active:scale-95 transition-all flex items-center justify-center">
@@ -197,10 +216,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useMainStore } from './main';
 
 const store = useMainStore();
+
+// 按鈕樣式 (CSS變數)
+const btnBase = "h-14 sm:h-16 w-full rounded-2xl text-xl font-medium active:scale-95 transition-all flex items-center justify-center select-none cursor-pointer";
 
 // Data
 const ALL_CURRENCIES = [
@@ -246,10 +268,6 @@ const searchQuery = ref('');
 const selectionMode = ref('base');
 const editingTargetIndex = ref(-1);
 
-const activeLongPressId = ref(null);
-let longPressTimer = null;
-const longPressTriggered = ref(false);
-
 onMounted(async () => {
   await store.fetchRates();
   const savedHistory = localStorage.getItem('calc_history');
@@ -258,6 +276,12 @@ onMounted(async () => {
   if (savedPinned) pinnedCurrencies.value = JSON.parse(savedPinned);
   const savedTargets = localStorage.getItem('calc_targets');
   if (savedTargets) targetCurrencies.value = JSON.parse(savedTargets);
+});
+
+// 清理全域監聽器，防止組件銷毀後報錯
+onUnmounted(() => {
+  window.removeEventListener('mousemove', handleWindowMouseMove);
+  window.removeEventListener('mouseup', handleWindowMouseUp);
 });
 
 watch(pinnedCurrencies, (val) => localStorage.setItem('calc_pinned', JSON.stringify(val)), { deep: true });
@@ -276,24 +300,196 @@ const openCurrencyModal = (mode, index = -1) => {
   showCurrencyModal.value = true;
 };
 
-// 處理目標貨幣的點擊事件 (短按互換，長按編輯)
-const handleTargetClick = (index) => {
-  if (longPressTriggered.value) return; // 如果觸發了長按，則不執行短按邏輯
-  
-  // Swap logic (互換邏輯)
-  const oldBase = baseCurrency.value;
-  const newBase = targetCurrencies.value[index];
+// --- 互動邏輯 (Touch & Mouse) ---
+const isDragging = ref(false);
+const dragIndex = ref(-1);
+const isSwiping = ref(false);
+const swipeIndex = ref(-1);
+const swipeOffset = ref(0);
+const isMouseDown = ref(false);
+const wasDragging = ref(false); // 判斷是否發生過拖曳
 
-  baseCurrency.value = newBase;
-  targetCurrencies.value[index] = oldBase;
+let startX = 0;
+let startY = 0;
+let pressTimer = null;
+let lastTapTime = 0;
+let lastTapIndex = -1;
+let lastSwapTime = 0; // 用於防止交換閃爍
 
-  // 觸覺回饋增加互動感
-  if (navigator.vibrate) navigator.vibrate(30);
+// 1. 雙擊交換 (Double Click to Swap)
+const handleCardClick = (index) => {
+  // 如果剛結束拖曳或滑動，則不觸發點擊
+  if (isDragging.value || isSwiping.value || wasDragging.value) return;
+
+  const now = Date.now();
+  if (index === lastTapIndex && now - lastTapTime < 350) {
+     const temp = baseCurrency.value;
+     baseCurrency.value = targetCurrencies.value[index];
+     targetCurrencies.value[index] = temp;
+     
+     if (navigator.vibrate) navigator.vibrate(50);
+     lastTapTime = 0;
+     lastTapIndex = -1;
+  } else {
+     lastTapTime = now;
+     lastTapIndex = index;
+  }
 };
 
-const handleCurrencySelect = (curr) => {
-  if (longPressTriggered.value) return;
+// 2. 輸入開始 (Touch Start / Mouse Down)
+const handleInputStart = (e, index, type) => {
+  if (type === 'mouse' && e.button !== 0) return; 
+  
+  isMouseDown.value = true;
+  wasDragging.value = false; // 重置拖曳狀態
+  
+  const clientX = type === 'touch' ? e.touches[0].clientX : e.clientX;
+  const clientY = type === 'touch' ? e.touches[0].clientY : e.clientY;
 
+  startX = clientX;
+  startY = clientY;
+  
+  // 重置滑動狀態
+  isSwiping.value = false;
+  swipeIndex.value = -1;
+  swipeOffset.value = 0;
+
+  // 滑鼠模式：綁定全域監聽器，防止拖曳時滑鼠移出元素導致失效
+  if (type === 'mouse') {
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+  }
+
+  pressTimer = setTimeout(() => {
+     isDragging.value = true;
+     wasDragging.value = true; // 標記為正在拖曳
+     dragIndex.value = index;
+     if (navigator.vibrate) navigator.vibrate(50);
+  }, 500);
+};
+
+// 3. 通用移動邏輯
+const handleInputMove = (e, type) => {
+  if (type === 'mouse') return; // 滑鼠由 handleWindowMouseMove 處理
+  const clientX = e.touches[0].clientX;
+  const clientY = e.touches[0].clientY;
+  processMove(clientX, clientY, e, 'touch');
+};
+
+const handleWindowMouseMove = (e) => {
+  if (!isMouseDown.value) return;
+  processMove(e.clientX, e.clientY, e, 'mouse');
+};
+
+const processMove = (clientX, clientY, e, type) => {
+  const dx = clientX - startX;
+  const dy = clientY - startY;
+
+  // 只要有明顯移動，就清除長按 timer
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+     clearTimeout(pressTimer);
+  }
+
+  if (isDragging.value) {
+     if (type === 'touch') e.preventDefault();
+     
+     const targetEl = document.elementFromPoint(clientX, clientY);
+     const targetRow = targetEl?.closest('[data-index]');
+     
+     if (targetRow) {
+        const targetIdx = parseInt(targetRow.getAttribute('data-index'));
+        
+        // 加入時間檢查 (Cooldown) 防止快速來回交換
+        const now = Date.now();
+        if (targetIdx !== -1 && !isNaN(targetIdx) && targetIdx !== dragIndex.value) {
+           if (now - lastSwapTime > 250) { // 250ms 冷卻時間
+              const item = targetCurrencies.value[dragIndex.value];
+              targetCurrencies.value.splice(dragIndex.value, 1);
+              targetCurrencies.value.splice(targetIdx, 0, item);
+              dragIndex.value = targetIdx; 
+              if (navigator.vibrate) navigator.vibrate(10);
+              lastSwapTime = now;
+           }
+        }
+     }
+  } 
+  else {
+     // 判斷滑動
+     if (!isSwiping.value) {
+        if (Math.abs(dx) > 10) { 
+           if (Math.abs(dx) > Math.abs(dy)) {
+              if (dx < 0) { // 左滑
+                 isSwiping.value = true;
+                 wasDragging.value = true; // 滑動也視為拖曳的一種
+                 
+                 // 尋找目標 Row
+                 let row;
+                 if (type === 'touch') {
+                    row = e.target.closest('[data-index]');
+                 } else { 
+                    const el = document.elementFromPoint(startX, startY);
+                    row = el?.closest('[data-index]');
+                 }
+
+                 if (row) swipeIndex.value = parseInt(row.getAttribute('data-index'));
+              }
+           }
+        }
+     }
+
+     if (isSwiping.value) {
+        if(e.cancelable) e.preventDefault(); 
+        swipeOffset.value = Math.min(0, Math.max(-120, dx));
+     }
+  }
+};
+
+// 4. 輸入結束
+const handleInputEnd = () => {
+  cleanupInput();
+};
+
+const handleWindowMouseUp = () => {
+  cleanupInput();
+  window.removeEventListener('mousemove', handleWindowMouseMove);
+  window.removeEventListener('mouseup', handleWindowMouseUp);
+};
+
+const cleanupInput = () => {
+  clearTimeout(pressTimer);
+  isMouseDown.value = false;
+  
+  if (isDragging.value) {
+    isDragging.value = false;
+    dragIndex.value = -1;
+  }
+  
+  if (isSwiping.value) {
+     if (swipeOffset.value < -60) {
+        openCurrencyModal('target', swipeIndex.value);
+     }
+     swipeOffset.value = 0;
+     setTimeout(() => {
+        isSwiping.value = false;
+        swipeIndex.value = -1;
+     }, 200);
+  }
+  
+  // 延遲重置 wasDragging，避免 click 事件立即觸發
+  setTimeout(() => {
+     wasDragging.value = false;
+  }, 100);
+};
+
+const getCardStyle = (index) => {
+   if (isSwiping.value && swipeIndex.value === index) {
+      return { transform: `translateX(${swipeOffset.value}px)` };
+   }
+   return {};
+};
+// --- End Interaction Logic ---
+
+const handleCurrencySelect = (curr) => {
   if (selectionMode.value === 'base') {
     baseCurrency.value = curr;
   } else if (selectionMode.value === 'target') {
@@ -303,43 +499,6 @@ const handleCurrencySelect = (curr) => {
   }
   showCurrencyModal.value = false;
 };
-
-const togglePin = (curr) => {
-  if (pinnedCurrencies.value.includes(curr)) {
-    pinnedCurrencies.value = pinnedCurrencies.value.filter(c => c !== curr);
-  } else {
-    pinnedCurrencies.value.push(curr);
-  }
-  if (navigator.vibrate) navigator.vibrate(50);
-};
-
-const startLongPress = (type, id) => {
-  longPressTriggered.value = false;
-  activeLongPressId.value = `${type}-${id}`;
-  longPressTimer = setTimeout(() => {
-    longPressTriggered.value = true;
-    if (type === 'pin') {
-      if (selectionMode.value === 'base') togglePin(id);
-    } else if (type === 'target') {
-      // 長按：開啟編輯選單
-      openCurrencyModal('target', id);
-    }
-    activeLongPressId.value = null;
-  }, 600);
-};
-
-const cancelLongPress = () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  activeLongPressId.value = null;
-};
-
-const handleTouchStart = (e, type, id) => startLongPress(type, id);
-const handleTouchEnd = () => cancelLongPress();
-const handleMouseDown = (type, id) => startLongPress(type, id);
-const handleMouseUp = () => cancelLongPress();
 
 const appendNumber = (num) => { displayValue.value = (displayValue.value === '0' && num !== '.') ? num : displayValue.value + num; };
 const appendOperator = (op) => { if(displayValue.value) { currentExpression.value += `${displayValue.value} ${op} `; displayValue.value = ''; } };
@@ -379,7 +538,6 @@ const formatNumber = (n) => new Intl.NumberFormat('en-US', { maximumFractionDigi
 </script>
 
 <style scoped>
-/* 隱藏滾動條但保持功能 (適用於 Webkit 瀏覽器) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -388,7 +546,6 @@ const formatNumber = (n) => new Intl.NumberFormat('en-US', { maximumFractionDigi
   scrollbar-width: none;
 }
 
-/* Modal 動畫 */
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: all 0.3s ease-out;
@@ -396,5 +553,17 @@ const formatNumber = (n) => new Intl.NumberFormat('en-US', { maximumFractionDigi
 .slide-up-enter-from,
 .slide-up-leave-to {
   transform: translateY(100%);
+}
+
+.list-complete-move {
+  transition: transform 0.3s ease;
+}
+.list-complete-enter-from,
+.list-complete-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.list-complete-leave-active {
+  position: absolute;
 }
 </style>
