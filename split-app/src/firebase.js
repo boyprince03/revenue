@@ -2,21 +2,19 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// 修改標記：若要使用 analytics 需引入，或直接註解掉以免報錯
-// import { getAnalytics } from "firebase/analytics"; 
 
+// 修改標記：改為從環境變數讀取配置
 const firebaseConfig = {
-  apiKey: "AIzaSyCIcAZiHaF11h6HxSxYbPaG8CafX7xSVig",
-  authDomain: "divvy-app-e4565.firebaseapp.com",
-  projectId: "divvy-app-e4565",
-  storageBucket: "divvy-app-e4565.firebasestorage.app",
-  messagingSenderId: "1098437381330",
-  appId: "1:1098437381330:web:7811b086b7bbc37ce8710b",
-  measurementId: "G-Z8KCWD3P9M"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app); // 修改標記：暫時註解掉，因為上方沒有 import 會導致崩潰
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
